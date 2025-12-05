@@ -18,6 +18,11 @@ public class SnakeGame {
     private int score = 0;
     private Text scoreText;
 
+    // Placeholder for optional sound effects
+    private void playWallHitSound() {
+        // future: play audio clip
+    }
+
     public Scene createGameScene() {
 
         board = new GameBoard(
@@ -86,8 +91,14 @@ public class SnakeGame {
     private boolean checkGameOver() {
         SnakeSegment head = snake.getSegments().get(0);
 
-        if (head.getX() < 0 || head.getX() >= board.getCols()) return true;
-        if (head.getY() < 0 || head.getY() >= board.getRows()) return true;
+        if (head.getX() < 0 || head.getX() >= board.getCols()) {
+            playWallHitSound();
+            return true;
+        }
+        if (head.getY() < 0 || head.getY() >= board.getRows()) {
+            playWallHitSound();
+            return true;
+        }
 
         for (int i = 1; i < snake.getSegments().size(); i++) {
             SnakeSegment seg = snake.getSegments().get(i);
