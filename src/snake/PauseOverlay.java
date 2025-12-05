@@ -1,5 +1,6 @@
 package snake;
 
+import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -14,7 +15,9 @@ public class PauseOverlay extends StackPane {
         Text pausedText = new Text("PAUSED");
         pausedText.setFont(Font.font(40));
         pausedText.setFill(Color.WHITE);
+        pausedText.setStyle("-fx-font-weight: bold;");
 
+        setAlignment(Pos.CENTER);
         getChildren().add(pausedText);
     }
 }
