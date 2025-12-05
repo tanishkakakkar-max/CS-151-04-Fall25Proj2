@@ -371,25 +371,56 @@ public class Blackjack {
 
     private void checkInitialBlackjack() {
         boolean playerBJ = player.hasBlackjack();
+        boolean bot1BJ = bot1.hasBlackjack();
+        boolean bot2BJ = bot2.hasBlackjack();
         boolean dealerBJ = dealer.hasBlackjack();
 
-        if (!playerBJ && !dealerBJ) {
+        // If no one has blackjack, continue normal play
+        if (!playerBJ && !bot1BJ && !bot2BJ && !dealerBJ) {
             return;
         }
 
-        if (playerBJ && !dealerBJ) {
-            player.winBet();
-            statusLabel.setText("Blackjack! You win.");
-        } else if (!playerBJ && dealerBJ) {
-            player.loseBet();
-            bot1.loseBet();
-            bot2.loseBet();
-            statusLabel.setText("Dealer has Blackjack. Everyone loses.");
+        // Handle dealer blackjack
+        if (dealerBJ) {
+            if (playerBJ) {
+                // Both player and dealer have blackjack - push for player
+                player.pushBet();
+            } else {
+                // Only dealer has blackjack - all players lose
+                player.loseBet();
+            }
+            
+            if (bot1BJ) {
+                bot1.pushBet();
+            } else {
+                bot1.loseBet();
+            }
+            
+            if (bot2BJ) {
+                bot2.pushBet();
+            } else {
+                bot2.loseBet();
+            }
+            
+            statusLabel.setText("Dealer has Blackjack. " + 
+                (playerBJ ? "You push." : "Everyone loses."));
         } else {
-            player.pushBet();
-            bot1.pushBet();
-            bot2.pushBet();
-            statusLabel.setText("Both you and the dealer have Blackjack. Push.");
+            // Dealer doesn't have blackjack, check players
+            if (playerBJ) {
+                player.winBet();
+            }
+            if (bot1BJ) {
+                bot1.winBet();
+            }
+            if (bot2BJ) {
+                bot2.winBet();
+            }
+            
+            StringBuilder msg = new StringBuilder("Blackjack! ");
+            if (playerBJ) msg.append("You win. ");
+            if (bot1BJ) msg.append("AI 1 wins. ");
+            if (bot2BJ) msg.append("AI 2 wins. ");
+            statusLabel.setText(msg.toString().trim());
         }
 
         roundActive = false;
@@ -426,8 +457,10 @@ public class Blackjack {
             updateTurnLabel();
             if (currentTurnIndex == 1) {
                 autoPlay(bot1);
+                currentTurnIndex++; // Move to next turn
             } else if (currentTurnIndex == 2) {
                 autoPlay(bot2);
+                currentTurnIndex++; // Move to next turn
             } else if (currentTurnIndex == 3) {
                 autoPlay(dealer);
                 endRound();
@@ -465,6 +498,9 @@ public class Blackjack {
             int playerBalance = player.getBalance();
             HighScoreController.updateScore(currentUser, playerBalance, "blackjack");
         }
+        
+        // Reshuffle deck after round ends
+        deck.reset();
     }
 
     private void settleAgainstDealerBust() {
@@ -488,7 +524,7 @@ public class Blackjack {
             if (p.isBusted()) {
                 p.loseBet();
                 if (p == player) sb.append("You busted. ");
-            } else if (value > dealerValue || dealerValue > 21) {
+            } else if (value > dealerValue) {
                 p.winBet();
                 if (p == player) sb.append("You win! ");
             } else if (value < dealerValue) {

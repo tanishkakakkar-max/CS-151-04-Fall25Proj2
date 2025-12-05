@@ -56,6 +56,7 @@ public abstract class Player {
             throw new IllegalArgumentException("Not enough balance");
         }
         currentBet = amount;
+        balance -= amount; // Deduct bet from balance when placed
     }
 
     public void addCard(Card card) {
@@ -91,15 +92,15 @@ public abstract class Player {
     }
 
     public void winBet() {
-        balance += currentBet;
+        balance += currentBet * 2; // Return bet + winnings (2x bet)
     }
 
     public void loseBet() {
-        balance -= currentBet;
+        // Bet already deducted when placed, nothing more to do
     }
 
     public void pushBet() {
-        // no change
+        balance += currentBet; // Return the bet (tie = no win, no loss)
     }
 
     public void stand() {
