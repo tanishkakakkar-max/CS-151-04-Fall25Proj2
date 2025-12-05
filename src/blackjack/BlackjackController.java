@@ -3,10 +3,10 @@ import javafx.scene.Scene;
 
 public class BlackjackController {
 
-    private final BlackjackGame blackjackGame;
+    private final Blackjack blackjackGame;
 
     public BlackjackController(String username) {
-        this.blackjackGame = new BlackjackGame(username);
+        this.blackjackGame = new Blackjack(username);
     }
 
     public Scene getMainMenuScene() {
@@ -17,7 +17,7 @@ public class BlackjackController {
         return blackjackGame.createGameScene();
     }
 
-    public BlackjackGame getBlackjackGame() {
+    public Blackjack getBlackjackGame() {
         return blackjackGame;
     }
 }

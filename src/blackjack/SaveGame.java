@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SaveState {
+public class SaveGame {
 
-    public static String createSaveState(BlackjackGame game) {
+    public static String createSaveState(Blackjack game) {
         StringBuilder sb = new StringBuilder();
 
         int turnIndex = game.getCurrentTurnIndex();
@@ -61,7 +61,7 @@ public class SaveState {
         return result;
     }
 
-    public static void loadFromSaveState(BlackjackGame game, String saveState) {
+    public static void loadFromSaveState(Blackjack game, String saveState) {
         try {
             String[] parts = saveState.split("\\|");
             if (parts.length != 5) {

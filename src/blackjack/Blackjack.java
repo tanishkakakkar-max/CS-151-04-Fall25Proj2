@@ -7,12 +7,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
-
+import javafx.stage.Stage;
 
 
 import java.util.List;
 
-public class BlackjackGame {
+public class Blackjack {
 
     private static final int STARTING_BALANCE = 1000;
     private static final int MIN_BET = 10;
@@ -44,15 +44,15 @@ public class BlackjackGame {
     private VBox ai2Box;
     private VBox dealerBox;
 
-    public BlackjackGame(String username) {
+    public Blackjack(String username) {
         this.username = username;
-        player = new Player(username, STARTING_BALANCE);
+        player = new HumanPlayer(username, STARTING_BALANCE);
         bot1 = new BotPlayer("AI 1", STARTING_BALANCE, 16);
         bot2 = new BotPlayer("AI 2", STARTING_BALANCE, 18);
         dealer = new Dealer(0); // dealer balance not needed
     }
 
-    // === accessors for SaveStateManager ===
+    // === accessors for SaveGame ===
 
     public Player getPlayer() {
         return player;
@@ -103,7 +103,9 @@ public class BlackjackGame {
         startButton.setOnAction(e -> {
             Scene gameScene = createGameScene();
             startNewRound();
-            startButton.getScene().getWindow().setScene(gameScene);
+            Stage stage = (Stage) startButton.getScene().getWindow();
+            stage.setScene(gameScene);
+
         });
 
         Label loadLabel = new Label("Load game from saveStateString:");
@@ -119,9 +121,11 @@ public class BlackjackGame {
                 return;
             }
             try {
-                SaveStateManager.loadFromSaveState(this, text);
+                SaveGame.loadFromSaveState(this, text);
                 Scene gameScene = createGameScene();
-                loadButton.getScene().getWindow().setScene(gameScene);
+                Stage stage = (Stage) loadButton.getScene().getWindow();
+                stage.setScene(gameScene);
+
                 updateAllPlayerViews();
                 updateTurnLabel();
                 statusLabel.setText("Game loaded from save state.");
@@ -291,7 +295,7 @@ public class BlackjackGame {
 
     private void updateAllPlayerViews() {
         boolean hideDealerSecond = roundActive && currentTurnIndex != 3;
-        updateParticipantBox(playerBox, BlackjackPlayer, hideDealerSecond);
+        updateParticipantBox(playerBox, player, hideDealerSecond);
         updateParticipantBox(ai1Box, bot1, hideDealerSecond);
         updateParticipantBox(ai2Box, bot2, hideDealerSecond);
         updateParticipantBox(dealerBox, dealer, hideDealerSecond);
@@ -497,7 +501,7 @@ public class BlackjackGame {
     }
 
     private void onSave() {
-        String state = SaveState.createSaveState(this);
+        String state = SaveGame.createSaveState(this);
         saveOutputArea.setText(state);
         statusLabel.setText("Save State.");
     }

@@ -2,8 +2,6 @@ package blackjack;
 
 public class Card {
 
-    public class Card {
-
         private final char rank; // e.g. 'A', 'K', '2', 'T'
         private final char suit; // e.g. 'H', 'D', 'C', 'S'
 
@@ -96,20 +94,18 @@ public class Card {
             };
         }
 
-//        public String getSuitName() {
-//            return switch (suit) {
-//                case 'H' -> "Hearts";
-//                case 'D' -> "Diamonds";
-//                case 'C' -> "Clubs";
-//                case 'S' -> "Spades";
-//                default -> "?";
-//            };
-//        }
+        public String getSuitName() {
+            return switch (suit) {
+                case 'H' -> "Hearts";
+                case 'D' -> "Diamonds";
+                case 'C' -> "Clubs";
+                case 'S' -> "Spades";
+                default -> "?";
+            };
+        }
 
         @Override
         public String toString() {
             return getRankName() + " of " + getSuitName();
         }
-    }
-
 }
