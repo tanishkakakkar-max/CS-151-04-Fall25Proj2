@@ -65,3 +65,18 @@ public class SnakeGame {
             food.spawn(board.getCols(), board.getRows());
         }
     }
+    private boolean checkGameOver() {
+        SnakeSegment head = snake.getSegments().get(0);
+
+        if (head.getX() < 0 || head.getX() >= board.getCols()) return true;
+        if (head.getY() < 0 || head.getY() >= board.getRows()) return true;
+
+        for (int i = 1; i < snake.getSegments().size(); i++) {
+            SnakeSegment seg = snake.getSegments().get(i);
+            if (seg.getX() == head.getX() && seg.getY() == head.getY()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
