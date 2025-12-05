@@ -13,10 +13,10 @@ public class Toolbar extends HBox {
         mainMenuButton = new Button("Main Menu");
         mainMenuButton.setOnAction(e -> goToMainMenu.run());
 
-        setSpacing(20);
+        setSpacing(15);
         setAlignment(Pos.CENTER_LEFT);
         getChildren().add(mainMenuButton);
 
-        setStyle("-fx-background-color: #333; -fx-padding: 10;");
+        setStyle("-fx-background-color: #222; -fx-padding: 8;");
     }
 }
