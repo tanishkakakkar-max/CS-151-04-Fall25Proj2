@@ -1,6 +1,5 @@
 package snake;
 
-public class SnakeGame {
-    // SnakeGame implementation
-}
-
+import javafx.animation.AnimationTimer;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
