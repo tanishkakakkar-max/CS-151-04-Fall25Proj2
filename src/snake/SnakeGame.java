@@ -15,8 +15,15 @@ public class SnakeGame {
 
     public Scene createGameScene() {
 
-        board = new GameBoard(25, 25, 20);
-        snake = new Snake(12, 12);
+        board = new GameBoard(
+            SnakeConstants.BOARD_ROWS,
+            SnakeConstants.BOARD_COLS,
+            SnakeConstants.CELL_SIZE
+        );
+        snake = new Snake(
+            SnakeConstants.BOARD_COLS / 2,
+            SnakeConstants.BOARD_ROWS / 2
+        );
         food = new Food(board.getCols(), board.getRows());
 
         StackPane root = new StackPane();
@@ -40,7 +47,7 @@ public class SnakeGame {
             @Override
             public void handle(long now) {
                 if (paused) return;
-                if (now - lastUpdate < 150_000_000) return; // Slow down snake
+                if (now - lastUpdate < SnakeConstants.FRAME_DELAY) return; // Slow down snake
 
                 snake.move();
                 checkFoodCollision();
