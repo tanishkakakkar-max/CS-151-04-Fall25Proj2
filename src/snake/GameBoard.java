@@ -1,6 +1,5 @@
 package snake;
 
-public class GameBoard {
-    // GameBoard implementation
-}
-
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
