@@ -1,8 +1,12 @@
 package snake;
 
 import javafx.animation.AnimationTimer;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 
 public class SnakeGame {
 
@@ -12,6 +16,7 @@ public class SnakeGame {
     private boolean paused = false;
     private AnimationTimer timer;
     private int score = 0;
+    private Text scoreText;
 
     public Scene createGameScene() {
 
@@ -26,8 +31,13 @@ public class SnakeGame {
         );
         food = new Food(board.getCols(), board.getRows());
 
+        scoreText = new Text("Score: 0");
+        scoreText.setFill(Color.WHITE);
+        scoreText.setFont(Font.font(20));
+
         StackPane root = new StackPane();
-        root.getChildren().add(board.getCanvas());
+        root.getChildren().addAll(board.getCanvas(), scoreText);
+        StackPane.setAlignment(scoreText, Pos.TOP_CENTER);
 
         Scene scene = new Scene(root);
 
@@ -68,6 +78,7 @@ public class SnakeGame {
 
         if (head.getX() == food.getX() && head.getY() == food.getY()) {
             score++;
+            scoreText.setText("Score: " + score);
             snake.grow();
             food.spawn(board.getCols(), board.getRows());
         }
