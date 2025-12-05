@@ -119,4 +119,14 @@ public class SnakeGame {
             root.getChildren().removeIf(node -> node instanceof PauseOverlay);
         }
     }
+
+    public void resetGame() {
+        snake = new Snake(
+                SnakeConstants.BOARD_COLS / 2,
+                SnakeConstants.BOARD_ROWS / 2
+        );
+        score = 0;
+        scoreText.setText("Score: 0");
+        food.spawn(board.getCols(), board.getRows());
+    }
 }
