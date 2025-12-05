@@ -56,3 +56,12 @@ public class SnakeGame {
         timer.start();
         return scene;
     }
+    private void checkFoodCollision() {
+        SnakeSegment head = snake.getSegments().get(0);
+
+        if (head.getX() == food.getX() && head.getY() == food.getY()) {
+            score++;
+            snake.grow();
+            food.spawn(board.getCols(), board.getRows());
+        }
+    }
