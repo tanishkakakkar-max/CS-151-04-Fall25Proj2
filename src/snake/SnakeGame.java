@@ -72,6 +72,7 @@ public class SnakeGame {
                 checkFoodCollision();
                 if (checkGameOver()) {
                     stop();
+                    showGameOverOverlay(root);
                 }
 
                 board.render(snake, food);
@@ -118,6 +119,14 @@ public class SnakeGame {
         } else {
             root.getChildren().removeIf(node -> node instanceof PauseOverlay);
         }
+    }
+
+    private void showGameOverOverlay(StackPane root) {
+        Text over = new Text("GAME OVER");
+        over.setFont(Font.font(40));
+        over.setFill(Color.RED);
+        root.getChildren().add(over);
+        StackPane.setAlignment(over, Pos.CENTER);
     }
 
     public void resetGame() {
