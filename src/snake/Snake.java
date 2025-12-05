@@ -12,7 +12,7 @@ public class Snake {
     }
 
     public Snake(int startX, int startY) {
-        
+        // Start snake with one head segment
         segments.add(new SnakeSegment(startX, startY));
         currentDirection = Direction.RIGHT;
     }
@@ -25,12 +25,29 @@ public class Snake {
         return currentDirection;
     }
 
-    public void setDirection(Direction dir) {
-        this.currentDirection = dir;
+    public void setDirection(Direction d) {
+        this.currentDirection = d;
     }
 
+
     public void move() {
-        
+        for (int i = segments.size() - 1; i > 0; i--) {
+            SnakeSegment prev = segments.get(i - 1);
+            segments.get(i).setPosition(prev.getX(), prev.getY());
+        }
+
+        SnakeSegment head = segments.get(0);
+        int newX = head.getX();
+        int newY = head.getY();
+
+        switch (currentDirection) {
+            case UP -> newY--;
+            case DOWN -> newY++;
+            case LEFT -> newX--;
+            case RIGHT -> newX++;
+        }
+
+        head.setPosition(newX, newY);
     }
 
     public void grow() {
