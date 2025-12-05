@@ -47,12 +47,16 @@ public class SnakeGame {
         Scene scene = new Scene(root);
 
         scene.setOnKeyPressed(e -> {
+            Snake.Direction newDir = null;
             switch (e.getCode()) {
-                case UP -> snake.setDirection(Snake.Direction.UP);
-                case DOWN -> snake.setDirection(Snake.Direction.DOWN);
-                case LEFT -> snake.setDirection(Snake.Direction.LEFT);
-                case RIGHT -> snake.setDirection(Snake.Direction.RIGHT);
+                case UP -> newDir = Snake.Direction.UP;
+                case DOWN -> newDir = Snake.Direction.DOWN;
+                case LEFT -> newDir = Snake.Direction.LEFT;
+                case RIGHT -> newDir = Snake.Direction.RIGHT;
                 case ESCAPE -> togglePause(root);
+            }
+            if (newDir != null && !snake.isOpposite(newDir)) {
+                snake.setDirection(newDir);
             }
         });
 

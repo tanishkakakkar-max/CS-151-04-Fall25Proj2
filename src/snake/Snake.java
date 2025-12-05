@@ -29,6 +29,13 @@ public class Snake {
         this.currentDirection = d;
     }
 
+    public boolean isOpposite(Direction d) {
+        return (currentDirection == Direction.UP && d == Direction.DOWN)
+            || (currentDirection == Direction.DOWN && d == Direction.UP)
+            || (currentDirection == Direction.LEFT && d == Direction.RIGHT)
+            || (currentDirection == Direction.RIGHT && d == Direction.LEFT);
+    }
+
 
     public void move() {
         for (int i = segments.size() - 1; i > 0; i--) {
