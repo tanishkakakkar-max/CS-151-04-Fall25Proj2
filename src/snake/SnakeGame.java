@@ -80,3 +80,14 @@ public class SnakeGame {
 
         return false;
     }
+    private void togglePause(StackPane root) {
+        paused = !paused;
+
+        if (paused) {
+            PauseOverlay overlay = new PauseOverlay();
+            root.getChildren().add(overlay);
+        } else {
+            root.getChildren().removeIf(node -> node instanceof PauseOverlay);
+        }
+    }
+}
