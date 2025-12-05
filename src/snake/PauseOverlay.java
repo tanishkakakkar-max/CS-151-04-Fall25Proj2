@@ -5,10 +5,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
-/**
- * Simple overlay that appears when ESC is pressed.
- * It freezes gameplay until ESC is pressed again.
- */
+
 public class PauseOverlay extends StackPane {
 
     public PauseOverlay() {

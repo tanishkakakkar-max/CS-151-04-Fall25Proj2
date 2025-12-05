@@ -33,3 +33,26 @@ public class SnakeGame {
                 case ESCAPE -> togglePause(root);
             }
         });
+
+        timer = new AnimationTimer() {
+            long lastUpdate = 0;
+
+            @Override
+            public void handle(long now) {
+                if (paused) return;
+                if (now - lastUpdate < 150_000_000) return; // Slow down snake
+
+                snake.move();
+                checkFoodCollision();
+                if (checkGameOver()) {
+                    stop();
+                }
+
+                board.render(snake, food);
+                lastUpdate = now;
+            }
+        };
+
+        timer.start();
+        return scene;
+    }
