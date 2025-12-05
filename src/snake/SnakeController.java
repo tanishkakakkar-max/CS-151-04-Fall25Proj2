@@ -1,6 +1,3 @@
 package snake;
 
-public class SnakeController {
-    // SnakeController implementation
-}
-
+import javafx.scene.Scene;
