@@ -1,6 +1,5 @@
 package manager;
 
-public class Toolbar {
-    // Toolbar implementation
-}
-
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
