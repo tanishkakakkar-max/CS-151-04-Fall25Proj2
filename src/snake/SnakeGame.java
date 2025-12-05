@@ -7,6 +7,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import manager.HighScoreController;
 
 public class SnakeGame {
 
@@ -45,6 +46,9 @@ public class SnakeGame {
         StackPane.setAlignment(scoreText, Pos.TOP_CENTER);
 
         Scene scene = new Scene(root);
+        
+        // Store reference to root for pause functionality
+        final StackPane gameRootPane = root;
 
         scene.setOnKeyPressed(e -> {
             Snake.Direction newDir = null;
@@ -53,10 +57,13 @@ public class SnakeGame {
                 case DOWN -> newDir = Snake.Direction.DOWN;
                 case LEFT -> newDir = Snake.Direction.LEFT;
                 case RIGHT -> newDir = Snake.Direction.RIGHT;
-                case ESCAPE -> togglePause(root);
+                case ESCAPE -> togglePause(gameRootPane);
             }
-            if (newDir != null && !snake.isOpposite(newDir)) {
-                snake.setDirection(newDir);
+            if (newDir != null) {
+                // Prevent opposite direction and also check if direction would cause immediate collision
+                if (!snake.isOpposite(newDir) && !wouldCauseImmediateCollision(newDir)) {
+                    snake.setDirection(newDir);
+                }
             }
         });
 
@@ -69,8 +76,25 @@ public class SnakeGame {
                 if (now - lastUpdate < SnakeConstants.FRAME_DELAY) return; // Slow down snake
 
                 snake.move();
-                checkFoodCollision();
-                if (checkGameOver()) {
+                
+                // Check food collision after move
+                SnakeSegment head = snake.getSegments().get(0);
+                boolean foodEaten = (head.getX() == food.getX() && head.getY() == food.getY());
+                
+                if (foodEaten) {
+                    score++;
+                    scoreText.setText("Score: " + score);
+                    // Grow the snake - this adds a segment at the current tail position
+                    snake.grow();
+                    // Spawn food at a location not occupied by the snake
+                    do {
+                        food.spawn(board.getCols(), board.getRows());
+                    } while (isFoodOnSnake());
+                }
+                
+                // Check game over - but skip self-collision check if we just ate food
+                // because the new segment is at the tail position which is safe
+                if (checkGameOver(foodEaten)) {
                     stop();
                     showGameOverOverlay(root);
                 }
@@ -83,28 +107,61 @@ public class SnakeGame {
         timer.start();
         return scene;
     }
-    private void checkFoodCollision() {
-        SnakeSegment head = snake.getSegments().get(0);
-
-        if (head.getX() == food.getX() && head.getY() == food.getY()) {
-            score++;
-            scoreText.setText("Score: " + score);
-            snake.grow();
-            food.spawn(board.getCols(), board.getRows());
+    private boolean isFoodOnSnake() {
+        for (SnakeSegment seg : snake.getSegments()) {
+            if (seg.getX() == food.getX() && seg.getY() == food.getY()) {
+                return true;
+            }
         }
+        return false;
     }
-    private boolean checkGameOver() {
+    
+    private boolean wouldCauseImmediateCollision(Snake.Direction newDir) {
+        // If snake has only 1 segment, any direction is safe
+        if (snake.getSegments().size() <= 1) {
+            return false;
+        }
+        
+        // Calculate where the head would be if we move in the new direction
+        SnakeSegment head = snake.getSegments().get(0);
+        int nextX = head.getX();
+        int nextY = head.getY();
+        
+        switch (newDir) {
+            case UP -> nextY--;
+            case DOWN -> nextY++;
+            case LEFT -> nextX--;
+            case RIGHT -> nextX++;
+        }
+        
+        // Check if the next position would collide with the second segment (the neck)
+        // This prevents the snake from turning back into itself
+        if (snake.getSegments().size() > 1) {
+            SnakeSegment neck = snake.getSegments().get(1);
+            if (nextX == neck.getX() && nextY == neck.getY()) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    private boolean checkGameOver(boolean justAteFood) {
         SnakeSegment head = snake.getSegments().get(0);
 
+        // Always check wall collision
         if (!board.isInside(head.getX(), head.getY())) {
             playWallHitSound();
             return true;
         }
 
-        for (int i = 1; i < snake.getSegments().size(); i++) {
-            SnakeSegment seg = snake.getSegments().get(i);
-            if (seg.getX() == head.getX() && seg.getY() == head.getY()) {
-                return true;
+        // Skip self-collision check if we just ate food, because the new segment
+        // is at the tail position which the head just left, so it's safe
+        if (!justAteFood) {
+            for (int i = 1; i < snake.getSegments().size(); i++) {
+                SnakeSegment seg = snake.getSegments().get(i);
+                if (seg.getX() == head.getX() && seg.getY() == head.getY()) {
+                    return true;
+                }
             }
         }
 
@@ -127,6 +184,12 @@ public class SnakeGame {
         over.setFill(Color.RED);
         root.getChildren().add(over);
         StackPane.setAlignment(over, Pos.CENTER);
+        
+        // Save high score
+        String username = manager.GameManager.getCurrentUser();
+        if (username != null && !username.isEmpty() && score > 0) {
+            HighScoreController.updateScore(username, score, "snake");
+        }
     }
 
     public void resetGame() {

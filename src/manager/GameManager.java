@@ -124,6 +124,9 @@ public class GameManager extends Application {
         root.setTop(toolbar);
         root.setCenter(gameRoot);
         
+        // Make root focusable so it can receive key events
+        root.setFocusTraversable(true);
+        
         // Calculate proper dimensions (Snake board is 25x25 cells, 20px each = 500x500)
         // Plus toolbar height (~50px)
         double gameWidth = 500;
@@ -133,12 +136,20 @@ public class GameManager extends Application {
         Scene sceneWithToolbar = new Scene(root, gameWidth, gameHeight + toolbarHeight);
         
         // Transfer key event handlers from original scene to new scene
+        // The handler references the StackPane (gameRoot), which is now inside our BorderPane
         if (keyHandler != null) {
             sceneWithToolbar.setOnKeyPressed(keyHandler);
+            // Also attach to the game root (StackPane) to ensure it receives events
+            if (gameRoot instanceof javafx.scene.layout.StackPane) {
+                gameRoot.setOnKeyPressed(keyHandler);
+            }
         }
         
         primaryStage.setScene(sceneWithToolbar);
         primaryStage.setTitle("Snake - " + currentUser);
+        
+        // Request focus on the root so key events work
+        root.requestFocus();
     }
 
     /**

@@ -8,7 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
-
+import manager.HighScoreController;
 
 import java.util.List;
 
@@ -457,6 +457,13 @@ public class Blackjack {
             settleAgainstDealerBust();
         } else {
             settleAgainstDealer();
+        }
+        
+        // Save high score (use player's balance as score)
+        String currentUser = manager.GameManager.getCurrentUser();
+        if (currentUser != null && !currentUser.isEmpty()) {
+            int playerBalance = player.getBalance();
+            HighScoreController.updateScore(currentUser, playerBalance, "blackjack");
         }
     }
 
