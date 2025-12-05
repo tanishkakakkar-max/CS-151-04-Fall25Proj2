@@ -38,4 +38,8 @@ public class GameBoard {
 
     public int getRows() { return rows; }
     public int getCols() { return cols; }
+
+    public boolean isInside(int x, int y) {
+        return x >= 0 && y >= 0 && x < cols && y < rows;
+    }
 }

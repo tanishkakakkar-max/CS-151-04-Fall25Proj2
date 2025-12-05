@@ -95,11 +95,7 @@ public class SnakeGame {
     private boolean checkGameOver() {
         SnakeSegment head = snake.getSegments().get(0);
 
-        if (head.getX() < 0 || head.getX() >= board.getCols()) {
-            playWallHitSound();
-            return true;
-        }
-        if (head.getY() < 0 || head.getY() >= board.getRows()) {
+        if (!board.isInside(head.getX(), head.getY())) {
             playWallHitSound();
             return true;
         }
