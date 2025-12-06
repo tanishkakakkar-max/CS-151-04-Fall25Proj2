@@ -869,9 +869,8 @@ java -cp "out:junit-platform-console-standalone-1.10.0.jar" \
 
 ## Demo Video
 
-📹 **Demo Video**: [YouTube Link Here]
+📹 **Demo Video**: https://drive.google.com/file/d/17Yawiu4EZs8jiIrACF8PDDk2FRE595n2/view?usp=sharing
 
-*Note: Replace with actual demo video link when available.*
 
 ---
 
