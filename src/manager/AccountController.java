@@ -9,10 +9,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import storage.FileManager;
 
-/**
- * AccountController handles the account creation screen UI and logic.
- * Provides user registration functionality.
- */
+
 public class AccountController {
     
     private VBox view;
@@ -21,9 +18,7 @@ public class AccountController {
     private PasswordField confirmPasswordField;
     private Label messageLabel;
 
-    /**
-     * Constructor creates the account creation UI.
-     */
+  
     public AccountController() {
         createView();
     }
@@ -108,9 +103,7 @@ public class AccountController {
         confirmPasswordField.setOnAction(e -> handleCreateAccount());
     }
 
-    /**
-     * Handles the create account button action.
-     */
+   
     private void handleCreateAccount() {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
@@ -192,9 +185,7 @@ public class AccountController {
         return view;
     }
 
-    /**
-     * Clears all input fields.
-     */
+    
     public void clearFields() {
         usernameField.clear();
         passwordField.clear();

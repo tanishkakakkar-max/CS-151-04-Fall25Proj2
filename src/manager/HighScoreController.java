@@ -21,9 +21,7 @@ public class HighScoreController {
     private VBox blackjackScoresBox;
     private VBox snakeScoresBox;
 
-    /**
-     * Constructor creates the high scores UI.
-     */
+  
     public HighScoreController() {
         createView();
         loadScores();
