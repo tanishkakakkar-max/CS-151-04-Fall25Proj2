@@ -100,7 +100,7 @@ The high score system implements efficient sorting algorithms to maintain top 5 
 
 Tanishka developed the reusable `Toolbar` component (`Toolbar.java`) that provides consistent navigation across all game screens. The toolbar features a "Return to Main Menu" button with clean styling and proper event handling. She ensured the toolbar integrates seamlessly with both Blackjack and Snake games by wrapping game scenes in `BorderPane` containers with the toolbar positioned at the top. This design allows the toolbar to appear consistently across all game screens while maintaining proper focus management for keyboard input in the Snake game.
 
-### 🎮 Person 2 — Piero (Blackjack Game Developer)
+### Person 2 — Piero (Blackjack Game Developer)
 
 **Blackjack Core Logic**
 
@@ -122,7 +122,7 @@ Piero developed `BlackjackController.java` to bridge the game logic with the Jav
 
 He integrated card rendering using JavaFX `Canvas` and `GraphicsContext`, displaying card suits and ranks with proper visual representation. The UI includes real-time updates for turn indicators, status messages, and participant information boxes. Piero ensured proper state management, disabling buttons when appropriate (e.g., disabling Hit/Stand during dealer's turn) and providing clear visual feedback for all game events.
 
-### 🐍 Person 3 — Shresth (Snake Game + Toolbar + Full Integration)
+### Person 3 — Shresth (Snake Game + Toolbar + Full Integration)
 
 **Snake Game Implementation**
 
