@@ -511,8 +511,12 @@ public class Blackjack {
         player.addCard(deck.drawCard());
         updateAllPlayerViews();
         if (player.isBusted()) {
-            statusLabel.setText("You busted! Dealer wins.");
-            endRound();
+            statusLabel.setText("You busted! Round continues for others.");
+            // Disable player buttons since they're done
+            hitButton.setDisable(true);
+            standButton.setDisable(true);
+            // Advance to next turn so bots and dealer can still play
+            advanceTurn();
         }
     }
 
@@ -626,6 +630,11 @@ public class Blackjack {
 
     private void settleAgainstDealerBust() {
         for (Player p : List.of(player, bot1, bot2)) {
+            // Skip players who already have blackjack - they've already been paid
+            if (p.hasBlackjack()) {
+                continue;
+            }
+            
             if (!p.isBusted()) {
                 p.winBet();
             } else {
@@ -640,6 +649,11 @@ public class Blackjack {
         StringBuilder sb = new StringBuilder();
 
         for (Player p : List.of(player, bot1, bot2)) {
+            // Skip players who already have blackjack - they've already been paid
+            if (p.hasBlackjack()) {
+                continue;
+            }
+            
             int value = p.getHandValue();
 
             if (p.isBusted()) {

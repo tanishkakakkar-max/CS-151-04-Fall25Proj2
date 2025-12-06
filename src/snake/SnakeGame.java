@@ -22,6 +22,8 @@ public class SnakeGame {
     private AnimationTimer timer;
     private int score = STARTING_SCORE;
     private Text scoreText;
+    private StackPane gameRoot;
+    private javafx.event.EventHandler<? super javafx.scene.input.KeyEvent> keyEventHandler;
 
     // Placeholder for optional sound effects
     private void playWallHitSound() {
@@ -48,13 +50,18 @@ public class SnakeGame {
         StackPane root = new StackPane();
         root.getChildren().addAll(board.getCanvas(), scoreText);
         StackPane.setAlignment(scoreText, Pos.TOP_CENTER);
-
+        root.setFocusTraversable(true);
+        
+        // Store reference to root for restart functionality
+        this.gameRoot = root;
+        
         Scene scene = new Scene(root);
         
         // Store reference to root for pause functionality
         final StackPane gameRootPane = root;
 
-        scene.setOnKeyPressed(e -> {
+        // Create and store key event handler so it can be reattached after restart
+        keyEventHandler = e -> {
             Snake.Direction newDir = null;
             switch (e.getCode()) {
                 case UP -> newDir = Snake.Direction.UP;
@@ -69,7 +76,10 @@ public class SnakeGame {
                     snake.setDirection(newDir);
                 }
             }
-        });
+        };
+        
+        scene.setOnKeyPressed(keyEventHandler);
+        root.setOnKeyPressed(keyEventHandler);
 
         timer = new AnimationTimer() {
             long lastUpdate = 0;
@@ -251,6 +261,51 @@ public class SnakeGame {
                 }
             };
             timer.start();
+            
+            // Reattach key event handlers and restore focus after restart
+            javafx.application.Platform.runLater(() -> {
+                // Reattach key handler to ensure it works after restart
+                if (keyEventHandler != null) {
+                    root.setOnKeyPressed(keyEventHandler);
+                    root.setFocusTraversable(true);
+                    
+                    // Get the actual scene (might be wrapped by GameManager in a BorderPane)
+                    javafx.scene.Scene actualScene = root.getScene();
+                    if (actualScene != null) {
+                        // Reattach handler to scene
+                        actualScene.setOnKeyPressed(keyEventHandler);
+                        
+                        // Get the scene root (might be BorderPane from GameManager)
+                        javafx.scene.Parent sceneRoot = actualScene.getRoot();
+                        if (sceneRoot != null) {
+                            sceneRoot.setFocusTraversable(true);
+                            sceneRoot.setOnKeyPressed(keyEventHandler);
+                            
+                            // If it's a BorderPane (wrapped by GameManager), also attach to center and request focus
+                            if (sceneRoot instanceof javafx.scene.layout.BorderPane) {
+                                javafx.scene.layout.BorderPane bp = (javafx.scene.layout.BorderPane) sceneRoot;
+                                javafx.scene.Node center = bp.getCenter();
+                                if (center != null && center == root) {
+                                    // This is our game StackPane - attach handler and request focus
+                                    center.setOnKeyPressed(keyEventHandler);
+                                    center.setFocusTraversable(true);
+                                    center.requestFocus();
+                                } else {
+                                    root.requestFocus();
+                                }
+                            } else {
+                                root.requestFocus();
+                            }
+                        } else {
+                            root.requestFocus();
+                        }
+                    } else {
+                        root.requestFocus();
+                    }
+                } else {
+                    root.requestFocus();
+                }
+            });
         });
         
         gameOverBox.getChildren().addAll(over, scoreDisplay, restartButton);
@@ -267,8 +322,10 @@ public class SnakeGame {
         // Reset score
         score = STARTING_SCORE;
         scoreText.setText("Score: " + STARTING_SCORE);
-        // Reset food
-        food.spawn(board.getCols(), board.getRows());
+        // Reset food - ensure it doesn't spawn on snake
+        do {
+            food.spawn(board.getCols(), board.getRows());
+        } while (isFoodOnSnake());
         // Reset pause state
         paused = false;
         // Re-render the board
