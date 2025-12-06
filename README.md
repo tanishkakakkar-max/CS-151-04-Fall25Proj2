@@ -82,7 +82,7 @@ This project is a multi-game platform built with JavaFX that provides a complete
 
 This project was developed collaboratively by a team of three developers, each responsible for distinct components of the system. The following sections detail the specific contributions of each team member.
 
-### 🧑‍💻 Person 1 — Tanishka (Game Manager + Storage Systems)
+###  Person 1 — Tanishka (Game Manager + Storage Systems)
 
 **Game Manager Architecture**
 
