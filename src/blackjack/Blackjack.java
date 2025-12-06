@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
+import javafx.application.Platform;
 import manager.HighScoreController;
 
 import java.util.List;
@@ -104,8 +105,17 @@ public class Blackjack {
             Scene gameScene = createGameScene();
             startNewRound();
             Stage stage = (Stage) startButton.getScene().getWindow();
-            stage.setScene(gameScene);
-
+            
+            // Wrap game scene with toolbar
+            BorderPane rootWithToolbar = new BorderPane();
+            manager.Toolbar toolbar = new manager.Toolbar(() -> {
+                manager.GameManager.showMainMenu();
+            });
+            rootWithToolbar.setTop(toolbar);
+            rootWithToolbar.setCenter(gameScene.getRoot());
+            
+            Scene sceneWithToolbar = new Scene(rootWithToolbar, gameScene.getWidth(), gameScene.getHeight() + 50);
+            stage.setScene(sceneWithToolbar);
         });
 
         Label loadLabel = new Label("Load game from saveStateString:");
@@ -124,11 +134,46 @@ public class Blackjack {
                 SaveGame.loadFromSaveState(this, text);
                 Scene gameScene = createGameScene();
                 Stage stage = (Stage) loadButton.getScene().getWindow();
-                stage.setScene(gameScene);
+                
+                // Wrap game scene with toolbar
+                BorderPane rootWithToolbar = new BorderPane();
+                manager.Toolbar toolbar = new manager.Toolbar(() -> {
+                    manager.GameManager.showMainMenu();
+                });
+                rootWithToolbar.setTop(toolbar);
+                rootWithToolbar.setCenter(gameScene.getRoot());
+                
+                Scene sceneWithToolbar = new Scene(rootWithToolbar, gameScene.getWidth(), gameScene.getHeight() + 50);
+                stage.setScene(sceneWithToolbar);
 
                 updateAllPlayerViews();
                 updateTurnLabel();
-                statusLabel.setText("Game loaded from save state.");
+                
+                // Restore button states based on game state
+                if (roundActive) {
+                    if (currentTurnIndex == 0) {
+                        // Player's turn - enable hit/stand
+                        hitButton.setDisable(false);
+                        standButton.setDisable(false);
+                        dealButton.setDisable(true);
+                        statusLabel.setText("Game loaded. Your turn!");
+                    } else {
+                        // Not player's turn - continue game automatically
+                        hitButton.setDisable(true);
+                        standButton.setDisable(true);
+                        dealButton.setDisable(true);
+                        statusLabel.setText("Game loaded. Continuing...");
+                        // Continue the game from where it left off
+                        // Use Platform.runLater to ensure UI is ready
+                        Platform.runLater(() -> continueGameAfterLoad());
+                    }
+                } else {
+                    // Round not active - ready for new round
+                    hitButton.setDisable(true);
+                    standButton.setDisable(true);
+                    dealButton.setDisable(false);
+                    statusLabel.setText("Game loaded. Place your bet and press Deal to start.");
+                }
             } catch (IllegalArgumentException ex) {
                 showAlert("Load Failed", ex.getMessage());
             }
@@ -380,13 +425,13 @@ public class Blackjack {
             return;
         }
 
-        // Handle dealer blackjack
+        // Handle dealer blackjack - round ends for everyone
         if (dealerBJ) {
             if (playerBJ) {
                 // Both player and dealer have blackjack - push for player
                 player.pushBet();
             } else {
-                // Only dealer has blackjack - all players lose
+                // Only dealer has blackjack - player loses
                 player.loseBet();
             }
             
@@ -404,29 +449,58 @@ public class Blackjack {
             
             statusLabel.setText("Dealer has Blackjack. " + 
                 (playerBJ ? "You push." : "Everyone loses."));
-        } else {
-            // Dealer doesn't have blackjack, check players
-            if (playerBJ) {
-                player.winBet();
-            }
-            if (bot1BJ) {
-                bot1.winBet();
-            }
-            if (bot2BJ) {
-                bot2.winBet();
-            }
             
-            StringBuilder msg = new StringBuilder("Blackjack! ");
-            if (playerBJ) msg.append("You win. ");
-            if (bot1BJ) msg.append("AI 1 wins. ");
-            if (bot2BJ) msg.append("AI 2 wins. ");
-            statusLabel.setText(msg.toString().trim());
+            // Round ends when dealer has blackjack
+            roundActive = false;
+            hitButton.setDisable(true);
+            standButton.setDisable(true);
+            dealButton.setDisable(false);
+            updateAllPlayerViews();
+            return;
         }
-
-        roundActive = false;
-        hitButton.setDisable(true);
-        standButton.setDisable(true);
-        dealButton.setDisable(false);
+        
+        // Dealer doesn't have blackjack - handle player blackjacks
+        // Players with blackjack win immediately, but round continues for others
+        StringBuilder msg = new StringBuilder();
+        boolean allPlayersHaveBJ = playerBJ && bot1BJ && bot2BJ;
+        
+        if (playerBJ) {
+            player.winBet();
+            player.stand(); // Player with blackjack is done
+            msg.append("You have Blackjack! ");
+        }
+        if (bot1BJ) {
+            bot1.winBet();
+            bot1.stand(); // Bot1 with blackjack is done
+            msg.append("AI 1 has Blackjack! ");
+        }
+        if (bot2BJ) {
+            bot2.winBet();
+            bot2.stand(); // Bot2 with blackjack is done
+            msg.append("AI 2 has Blackjack! ");
+        }
+        
+        if (msg.length() > 0) {
+            msg.append("Round continues for others.");
+            statusLabel.setText(msg.toString());
+        }
+        
+        // If all players have blackjack, round ends
+        if (allPlayersHaveBJ) {
+            roundActive = false;
+            hitButton.setDisable(true);
+            standButton.setDisable(true);
+            dealButton.setDisable(false);
+        } else {
+            // Round continues for players without blackjack
+            // If player has blackjack, they're done - advance to next turn
+            if (playerBJ) {
+                // Player is done, advance to bots
+                advanceTurn();
+            }
+            // Otherwise, player can still play (buttons already enabled)
+        }
+        
         updateAllPlayerViews();
     }
 
@@ -453,6 +527,53 @@ public class Blackjack {
     private void advanceTurn() {
         currentTurnIndex++;
 
+        while (roundActive && currentTurnIndex <= 3) {
+            updateTurnLabel();
+            if (currentTurnIndex == 1) {
+                autoPlay(bot1);
+                currentTurnIndex++; // Move to next turn
+            } else if (currentTurnIndex == 2) {
+                autoPlay(bot2);
+                currentTurnIndex++; // Move to next turn
+            } else if (currentTurnIndex == 3) {
+                autoPlay(dealer);
+                endRound();
+                break;
+            }
+        }
+        updateAllPlayerViews();
+    }
+    
+    private void continueGameAfterLoad() {
+        // Continue the game from the current turn index
+        // This is called after loading a save state when it's not the player's turn
+        if (!roundActive) {
+            return;
+        }
+        
+        // Set standing flags based on turn index
+        // If turnIndex > 0, player has already stood
+        if (currentTurnIndex > 0) {
+            player.stand();
+        }
+        // If turnIndex > 1, bot1 has already played (stood or busted)
+        if (currentTurnIndex > 1 && !bot1.isBusted()) {
+            bot1.stand();
+        }
+        // If turnIndex > 2, bot2 has already played (stood or busted)
+        if (currentTurnIndex > 2 && !bot2.isBusted()) {
+            bot2.stand();
+        }
+        
+        // If it's already the dealer's turn, play dealer and end round
+        if (currentTurnIndex == 3) {
+            updateTurnLabel();
+            autoPlay(dealer);
+            endRound();
+            return;
+        }
+        
+        // Continue from current turn
         while (roundActive && currentTurnIndex <= 3) {
             updateTurnLabel();
             if (currentTurnIndex == 1) {

@@ -3,6 +3,7 @@ package storage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import utils.EncryptionUtils;
 
 /**
  * FileManager handles all file I/O operations for user accounts and high scores.
@@ -55,16 +56,30 @@ public class FileManager {
 
     /**
      * Loads users from user_accounts.txt.
+     * Handles both encrypted and plain text passwords for backward compatibility.
      */
     public void loadUsers() {
         users.clear();
+        boolean needsMigration = false;
         try (BufferedReader reader = new BufferedReader(new FileReader(ACCOUNTS_FILE))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 User user = User.fromFileFormat(line);
                 if (user != null) {
+                    // Check if password is plain text (not encrypted) and encrypt it
+                    String password = user.getPassword();
+                    if (password != null && !password.isEmpty() && !EncryptionUtils.isEncrypted(password)) {
+                        // Migrate plain text password to encrypted
+                        String encryptedPassword = EncryptionUtils.encrypt(password);
+                        user.setPassword(encryptedPassword);
+                        needsMigration = true;
+                    }
                     users.add(user);
                 }
+            }
+            // Save users back to file if any were migrated
+            if (needsMigration) {
+                saveUsers();
             }
         } catch (IOException e) {
             System.err.println("Error loading users: " + e.getMessage());
@@ -122,15 +137,18 @@ public class FileManager {
 
     /**
      * Adds a new user account.
+     * Password will be encrypted before storage.
      * @param username the username
-     * @param password the password
+     * @param password the plain text password
      * @return true if account created successfully
      */
     public boolean addUser(String username, String password) {
         if (userExists(username)) {
             return false;
         }
-        User newUser = new User(username, password);
+        // Encrypt password before storing
+        String encryptedPassword = EncryptionUtils.encrypt(password);
+        User newUser = new User(username, encryptedPassword, true);
         users.add(newUser);
         saveUsers();
         return true;

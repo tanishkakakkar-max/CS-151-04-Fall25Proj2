@@ -3,7 +3,9 @@ package snake;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -11,12 +13,14 @@ import manager.HighScoreController;
 
 public class SnakeGame {
 
+    private static final int STARTING_SCORE = 1000;
+    
     private Snake snake;
     private Food food;
     private GameBoard board;
     private boolean paused = false;
     private AnimationTimer timer;
-    private int score = 0;
+    private int score = STARTING_SCORE;
     private Text scoreText;
 
     // Placeholder for optional sound effects
@@ -37,7 +41,7 @@ public class SnakeGame {
         );
         food = new Food(board.getCols(), board.getRows());
 
-        scoreText = new Text("Score: 0");
+        scoreText = new Text("Score: " + STARTING_SCORE);
         scoreText.setFill(Color.WHITE);
         scoreText.setFont(Font.font(20));
 
@@ -179,26 +183,97 @@ public class SnakeGame {
     }
 
     private void showGameOverOverlay(StackPane root) {
-        Text over = new Text("GAME OVER");
-        over.setFont(Font.font(40));
-        over.setFill(Color.RED);
-        root.getChildren().add(over);
-        StackPane.setAlignment(over, Pos.CENTER);
-        
         // Save high score
         String username = manager.GameManager.getCurrentUser();
         if (username != null && !username.isEmpty() && score > 0) {
             HighScoreController.updateScore(username, score, "snake");
         }
+        
+        // Create game over overlay with score and restart button
+        VBox gameOverBox = new VBox(20);
+        gameOverBox.setAlignment(Pos.CENTER);
+        
+        Text over = new Text("GAME OVER");
+        over.setFont(Font.font(40));
+        over.setFill(Color.RED);
+        
+        Text scoreDisplay = new Text("Final Score: " + score);
+        scoreDisplay.setFont(Font.font(24));
+        scoreDisplay.setFill(Color.WHITE);
+        
+        Button restartButton = new Button("Restart Game");
+        restartButton.setFont(Font.font(18));
+        restartButton.setStyle("-fx-padding: 10 20 10 20;");
+        restartButton.setOnAction(e -> {
+            // Remove game over overlay and any pause overlays
+            root.getChildren().removeIf(node -> node instanceof VBox || node instanceof PauseOverlay);
+            // Stop the old timer
+            if (timer != null) {
+                timer.stop();
+            }
+            // Reset the game state
+            resetGame();
+            // Create and start a new timer
+            timer = new AnimationTimer() {
+                long lastUpdate = 0;
+
+                @Override
+                public void handle(long now) {
+                    if (paused) return;
+                    if (now - lastUpdate < SnakeConstants.FRAME_DELAY) return; // Slow down snake
+
+                    snake.move();
+                    
+                    // Check food collision after move
+                    SnakeSegment head = snake.getSegments().get(0);
+                    boolean foodEaten = (head.getX() == food.getX() && head.getY() == food.getY());
+                    
+                    if (foodEaten) {
+                        score++;
+                        scoreText.setText("Score: " + score);
+                        // Grow the snake - this adds a segment at the current tail position
+                        snake.grow();
+                        // Spawn food at a location not occupied by the snake
+                        do {
+                            food.spawn(board.getCols(), board.getRows());
+                        } while (isFoodOnSnake());
+                    }
+                    
+                    // Check game over - but skip self-collision check if we just ate food
+                    // because the new segment is at the tail position which is safe
+                    if (checkGameOver(foodEaten)) {
+                        stop();
+                        showGameOverOverlay(root);
+                    }
+
+                    board.render(snake, food);
+                    lastUpdate = now;
+                }
+            };
+            timer.start();
+        });
+        
+        gameOverBox.getChildren().addAll(over, scoreDisplay, restartButton);
+        root.getChildren().add(gameOverBox);
+        StackPane.setAlignment(gameOverBox, Pos.CENTER);
     }
 
     public void resetGame() {
+        // Reset snake
         snake = new Snake(
                 SnakeConstants.BOARD_COLS / 2,
                 SnakeConstants.BOARD_ROWS / 2
         );
-        score = 0;
-        scoreText.setText("Score: 0");
+        // Reset score
+        score = STARTING_SCORE;
+        scoreText.setText("Score: " + STARTING_SCORE);
+        // Reset food
         food.spawn(board.getCols(), board.getRows());
+        // Reset pause state
+        paused = false;
+        // Re-render the board
+        if (board != null) {
+            board.render(snake, food);
+        }
     }
 }

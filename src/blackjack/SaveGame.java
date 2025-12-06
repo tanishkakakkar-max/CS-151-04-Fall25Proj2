@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import utils.EncryptionUtils;
 
 public class SaveGame {
 
@@ -37,7 +38,9 @@ public class SaveGame {
                 .collect(Collectors.toList());
         sb.append(String.join(",", deckCodes));
 
-        return sb.toString();
+        // Encrypt the entire save state string
+        String plainSaveState = sb.toString();
+        return EncryptionUtils.encrypt(plainSaveState);
     }
 
     private static String cardsToSegment(List<Card> cards) {
@@ -61,8 +64,16 @@ public class SaveGame {
         return result;
     }
 
-    public static void loadFromSaveState(Blackjack game, String saveState) {
+    public static void loadFromSaveState(Blackjack game, String saveStateInput) {
         try {
+            // Try to decrypt first (new encrypted format)
+            String saveState = EncryptionUtils.decrypt(saveStateInput);
+            
+            // If decryption failed or returned empty, try as plain text (backward compatibility)
+            if (saveState == null || saveState.isEmpty()) {
+                saveState = saveStateInput;
+            }
+            
             String[] parts = saveState.split("\\|");
             if (parts.length != 5) {
                 throw new IllegalArgumentException("Invalid save state format");
