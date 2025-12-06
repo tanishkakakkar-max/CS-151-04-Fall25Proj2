@@ -214,103 +214,140 @@ public class SnakeGame {
         Button restartButton = new Button("Restart Game");
         restartButton.setFont(Font.font(18));
         restartButton.setStyle("-fx-padding: 10 20 10 20;");
-        restartButton.setOnAction(e -> {
-            // Remove game over overlay and any pause overlays
-            root.getChildren().removeIf(node -> node instanceof VBox || node instanceof PauseOverlay);
-            // Stop the old timer
-            if (timer != null) {
-                timer.stop();
-            }
-            // Reset the game state
-            resetGame();
-            // Create and start a new timer
-            timer = new AnimationTimer() {
-                long lastUpdate = 0;
-
-                @Override
-                public void handle(long now) {
-                    if (paused) return;
-                    if (now - lastUpdate < SnakeConstants.FRAME_DELAY) return; // Slow down snake
-
-                    snake.move();
-                    
-                    // Check food collision after move
-                    SnakeSegment head = snake.getSegments().get(0);
-                    boolean foodEaten = (head.getX() == food.getX() && head.getY() == food.getY());
-                    
-                    if (foodEaten) {
-                        score++;
-                        scoreText.setText("Score: " + score);
-                        // Grow the snake - this adds a segment at the current tail position
-                        snake.grow();
-                        // Spawn food at a location not occupied by the snake
-                        do {
-                            food.spawn(board.getCols(), board.getRows());
-                        } while (isFoodOnSnake());
-                    }
-                    
-                    // Check game over - but skip self-collision check if we just ate food
-                    // because the new segment is at the tail position which is safe
-                    if (checkGameOver(foodEaten)) {
-                        stop();
-                        showGameOverOverlay(root);
-                    }
-
-                    board.render(snake, food);
-                    lastUpdate = now;
-                }
-            };
-            timer.start();
-            
-            // Reattach key event handlers and restore focus after restart
-            javafx.application.Platform.runLater(() -> {
-                // Reattach key handler to ensure it works after restart
-                if (keyEventHandler != null) {
-                    root.setOnKeyPressed(keyEventHandler);
-                    root.setFocusTraversable(true);
-                    
-                    // Get the actual scene (might be wrapped by GameManager in a BorderPane)
-                    javafx.scene.Scene actualScene = root.getScene();
-                    if (actualScene != null) {
-                        // Reattach handler to scene
-                        actualScene.setOnKeyPressed(keyEventHandler);
-                        
-                        // Get the scene root (might be BorderPane from GameManager)
-                        javafx.scene.Parent sceneRoot = actualScene.getRoot();
-                        if (sceneRoot != null) {
-                            sceneRoot.setFocusTraversable(true);
-                            sceneRoot.setOnKeyPressed(keyEventHandler);
-                            
-                            // If it's a BorderPane (wrapped by GameManager), also attach to center and request focus
-                            if (sceneRoot instanceof javafx.scene.layout.BorderPane) {
-                                javafx.scene.layout.BorderPane bp = (javafx.scene.layout.BorderPane) sceneRoot;
-                                javafx.scene.Node center = bp.getCenter();
-                                if (center != null && center == root) {
-                                    // This is our game StackPane - attach handler and request focus
-                                    center.setOnKeyPressed(keyEventHandler);
-                                    center.setFocusTraversable(true);
-                                    center.requestFocus();
-                                } else {
-                                    root.requestFocus();
-                                }
-                            } else {
-                                root.requestFocus();
-                            }
-                        } else {
-                            root.requestFocus();
-                        }
-                    } else {
-                        root.requestFocus();
-                    }
-                } else {
-                    root.requestFocus();
-                }
-            });
-        });
+        restartButton.setOnAction(e -> restartGame(root));
         
         gameOverBox.getChildren().addAll(over, scoreDisplay, restartButton);
         root.getChildren().add(gameOverBox);
         StackPane.setAlignment(gameOverBox, Pos.CENTER);
+    }
+
+    private void restartGame(StackPane root) {
+        // Remove game over overlay and any pause overlays
+        root.getChildren().removeIf(node -> node instanceof VBox || node instanceof PauseOverlay);
+        
+        // Stop the old timer
+        if (timer != null) {
+            timer.stop();
+        }
+        
+        // Reset game state
+        snake = new Snake(
+                SnakeConstants.BOARD_COLS / 2,
+                SnakeConstants.BOARD_ROWS / 2
+        );
+        score = STARTING_SCORE;
+        scoreText.setText("Score: " + STARTING_SCORE);
+        paused = false;
+        
+        // Reset food - ensure it doesn't spawn on snake
+        do {
+            food.spawn(board.getCols(), board.getRows());
+        } while (isFoodOnSnake());
+        
+        // Remove any existing key handlers first to avoid conflicts
+        javafx.scene.Scene scene = root.getScene();
+        if (scene != null) {
+            scene.setOnKeyPressed(null);
+            javafx.scene.Parent sceneRoot = scene.getRoot();
+            if (sceneRoot != null) {
+                sceneRoot.setOnKeyPressed(null);
+            }
+        }
+        root.setOnKeyPressed(null);
+        
+        // Recreate key handler to reference the new snake instance
+        final StackPane gameRootPane = root;
+        keyEventHandler = e -> {
+            Snake.Direction newDir = null;
+            switch (e.getCode()) {
+                case UP -> newDir = Snake.Direction.UP;
+                case DOWN -> newDir = Snake.Direction.DOWN;
+                case LEFT -> newDir = Snake.Direction.LEFT;
+                case RIGHT -> newDir = Snake.Direction.RIGHT;
+                case ESCAPE -> togglePause(gameRootPane);
+            }
+            if (newDir != null) {
+                if (!snake.isOpposite(newDir) && !wouldCauseImmediateCollision(newDir)) {
+                    snake.setDirection(newDir);
+                }
+            }
+        };
+        
+        // Attach new handler to all necessary nodes
+        if (scene != null) {
+            scene.setOnKeyPressed(keyEventHandler);
+            javafx.scene.Parent sceneRoot = scene.getRoot();
+            if (sceneRoot != null) {
+                sceneRoot.setOnKeyPressed(keyEventHandler);
+                sceneRoot.setFocusTraversable(true);
+            }
+        }
+        root.setOnKeyPressed(keyEventHandler);
+        root.setFocusTraversable(true);
+        
+        // Create and start new game timer
+        timer = new AnimationTimer() {
+            long lastUpdate = 0;
+
+            @Override
+            public void handle(long now) {
+                if (paused) return;
+                if (now - lastUpdate < SnakeConstants.FRAME_DELAY) return;
+
+                snake.move();
+                
+                SnakeSegment head = snake.getSegments().get(0);
+                boolean foodEaten = (head.getX() == food.getX() && head.getY() == food.getY());
+                
+                if (foodEaten) {
+                    score++;
+                    scoreText.setText("Score: " + score);
+                    snake.grow();
+                    do {
+                        food.spawn(board.getCols(), board.getRows());
+                    } while (isFoodOnSnake());
+                }
+                
+                if (checkGameOver(foodEaten)) {
+                    stop();
+                    showGameOverOverlay(root);
+                }
+
+                board.render(snake, food);
+                lastUpdate = now;
+            }
+        };
+        timer.start();
+        
+        // Request focus multiple times to ensure it sticks
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.Scene focusScene = root.getScene();
+            if (focusScene != null) {
+                javafx.scene.Parent sceneRoot = focusScene.getRoot();
+                if (sceneRoot != null) {
+                    sceneRoot.setFocusTraversable(true);
+                    sceneRoot.requestFocus();
+                    // Also try requesting focus on root as backup
+                    root.setFocusTraversable(true);
+                    root.requestFocus();
+                } else {
+                    root.requestFocus();
+                }
+            } else {
+                root.requestFocus();
+            }
+        });
+        
+        // Additional focus request after a short delay to ensure it works
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.Scene focusScene = root.getScene();
+            if (focusScene != null) {
+                javafx.scene.Parent sceneRoot = focusScene.getRoot();
+                if (sceneRoot != null) {
+                    sceneRoot.requestFocus();
+                }
+            }
+        });
     }
 
     public void resetGame() {
